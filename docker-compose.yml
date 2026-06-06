@@ -1,0 +1,44 @@
+services:
+    snmp-exporter:
+        image: prom/snmp-exporter
+        container_name: snmp-exporter
+        restart: unless-stopped
+        volumes:
+            - "${BASE_PATH:-.}/snmp_exporter/snmp.yml:/etc/snmp_exporter/snmp.yml:ro"
+        ports:
+            - "9116:9116"
+        command: [ "--config.file=/etc/snmp_exporter/snmp.yml" ]
+
+    prometheus:
+        image: prom/prometheus
+        container_name: prometheus
+        restart: unless-stopped
+        ports:
+            - "9090:9090"
+        volumes:
+            - "${BASE_PATH:-.}/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+            - "prometheus-data:/prometheus"
+        command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--storage.tsdb.retention.time=${PROMETHEUS_RETENTION_TIME}"
+
+    grafana:
+        image: grafana/grafana
+        container_name: grafana
+        restart: unless-stopped
+        environment:
+            - GF_SECURITY_ADMIN_USER=${GF_ADMIN_USER:-admin}
+            - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:-admin}
+            - GF_USERS_ALLOW_SIGN_UP=false
+        ports:
+            - "3000:3000"
+        volumes:
+            - "${BASE_PATH:-.}/grafana/prometheus_datasource.yml:/etc/grafana/provisioning/datasources/prometheus_datasource.yml:ro"
+            - "${BASE_PATH:-.}/grafana/dashboards_provider.yml:/etc/grafana/provisioning/dashboards/dashboards_provider.yml:ro"
+            - "${BASE_PATH:-.}/grafana/dashboards:/var/lib/grafana/dashboards:ro"
+            - "grafana-data:/var/lib/grafana"
+
+volumes:
+  prometheus-data:
+  grafana-data:

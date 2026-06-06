@@ -1,0 +1,21 @@
+scrape_configs:
+  - job_name: "synology"
+    scrape_interval: 10s
+    static_configs:
+      - targets: [ "10.10.10.10" ] # IP address of Synology NAS
+    metrics_path: /snmp
+    params:
+      # add necessary modules for for snmp scraping
+      # module: [ synology, if_mib, ip_mib ]
+      module: [ synology ]
+      # name of the auth block from snmp.yml
+      auth: [ synology ]
+    relabel_configs:
+      - source_labels: [ __address__ ]
+        target_label: __param_target
+      - source_labels: [ __param_target ]
+        target_label: instance
+      - target_label: __address__
+        # host:port of SNMP Exporter
+        # container-name:port if running in Docker in the same network as Prometheus
+        replacement: snmp-exporter:9116
